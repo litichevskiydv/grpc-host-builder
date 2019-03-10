@@ -42,6 +42,10 @@
     "testEnvironment": "node",
     "setupFilesAfterEnv": [
       "jest-extended"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/tests/generated/"
     ]
   },
   "dependencies": {
