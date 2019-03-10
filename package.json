@@ -1,0 +1,39 @@
+{
+  "name": "grpc-host-builder",
+  "version": "1.0.0",
+  "description": "Lightweight configurator for gRPC host",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "jest --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/litichevskiydv/grpc-host-builder.git"
+  },
+  "keywords": [
+    "gRPC",
+    "Host",
+    "Configurator"
+  ],
+  "author": "Dmitriy Litichevskiy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/litichevskiydv/grpc-host-builder/issues"
+  },
+  "homepage": "https://github.com/litichevskiydv/grpc-host-builder#readme",
+  "devDependencies": {
+    "coveralls": "3.0.3",
+    "jest": "24.3.1",
+    "jest-extended": "0.11.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupTestFrameworkScriptFile": "jest-extended"
+  }
+}
