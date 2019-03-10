@@ -35,6 +35,7 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+generated/
 
 # TypeScript v1 declaration files
 typings/
@@ -57,5 +58,7 @@ typings/
 # dotenv environment variables file
 .env
 
+# Dependency lock
+package-lock.json
 # next.js build output
 .next
