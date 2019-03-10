@@ -6,3 +6,8 @@ node_js:
   - node
 script:
   - npm test
+jobs:
+  include:
+    - stage: coverage
+      node_js: lts/*
+      script: jest --coverage --coverageReporters=text-lcov | coveralls
