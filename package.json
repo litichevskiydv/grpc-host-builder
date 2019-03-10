@@ -10,7 +10,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "jest --verbose"
+    "build:protos": "mkdirp ./tests/generated && pbjs -r greeter -t static-module -w commonjs --no-verify -o ./tests/generated/greeter_pb.js ./tests/protos/greeter.proto",
+    "build:types": "mkdirp ./tests/generated && pbts -o ./tests/generated/greeter_pb.d.ts ./tests/generated/greeter_pb.js",
+    "test": "npm run build:protos && npm run build:types && jest --verbose"
   },
   "repository": {
     "type": "git",
@@ -28,12 +30,22 @@
   },
   "homepage": "https://github.com/litichevskiydv/grpc-host-builder#readme",
   "devDependencies": {
+    "@grpc/proto-loader": "0.4.0",
     "coveralls": "3.0.3",
+    "grpc-tools": "1.7.1",
     "jest": "24.3.1",
-    "jest-extended": "0.11.1"
+    "jest-extended": "0.11.1",
+    "mkdirp": "0.5.1",
+    "protobufjs": "6.8.8"
   },
   "jest": {
     "testEnvironment": "node",
-    "setupTestFrameworkScriptFile": "jest-extended"
+    "setupFilesAfterEnv": [
+      "jest-extended"
+    ]
+  },
+  "dependencies": {
+    "grpc": "1.19.0",
+    "grpc-error": "1.0.0"
   }
 }
