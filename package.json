@@ -12,7 +12,8 @@
   "scripts": {
     "build:protos": "mkdirp ./tests/generated && pbjs -r greeter -t static-module -w commonjs --no-verify -o ./tests/generated/greeter_pb.js ./tests/protos/greeter.proto",
     "build:types": "mkdirp ./tests/generated && pbts -o ./tests/generated/greeter_pb.d.ts ./tests/generated/greeter_pb.js",
-    "test": "npm run build:protos && npm run build:types && jest --verbose"
+    "build": "npm run build:protos && npm run build:types",
+    "test": "jest --verbose"
   },
   "repository": {
     "type": "git",
