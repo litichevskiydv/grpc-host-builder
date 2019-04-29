@@ -12,7 +12,7 @@ jobs:
   include:
     - stage: coverage
       node_js: lts/*
-      script: npm run build:protos && npm run build:types && jest --coverage --coverageReporters=text-lcov | coveralls
+      script: npm run build:protos && jest --coverage --coverageReporters=text-lcov | coveralls
     - stage: deploy
       node_js: lts/*
       script: skip
