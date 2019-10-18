@@ -73,7 +73,9 @@ declare class GrpcHostBuilder {
 
 export = GrpcHostBuilder;
 
-type ServerContext = { createLogger: (options?: object) => Logging.ILogger };
+type ServerContext = {
+  createLogger: (options?: object) => Logging.ILogger;
+};
 
 type ServiceCall =
   | ServerUnaryCall<any>

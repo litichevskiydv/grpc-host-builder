@@ -1,6 +1,7 @@
 const { Server, ServerCredentials } = require("grpc");
 const { createLogger } = require("./logging/defaultLoggersFactory");
-const ExceptionsHandlingInterceptor = require("./exceptionsHandling/interceptor");
+const ExceptionsHandler = require("./interceptors/exceptionsHandler");
+const ContextsInitializer = require("./interceptors/contextsInitializer");
 
 module.exports = class GrpcHostBuilder {
   /**
@@ -11,10 +12,10 @@ module.exports = class GrpcHostBuilder {
     this._interceptorsDefinitions = [];
     this._servicesDefinitions = [];
 
-    this._serverContext = { createLogger };
     this._server = new Server(options);
+    this._serverContext = { createLogger };
 
-    this.addInterceptor(ExceptionsHandlingInterceptor);
+    this.addInterceptor(ExceptionsHandler).addInterceptor(ContextsInitializer);
   }
 
   /**

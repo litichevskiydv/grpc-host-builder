@@ -11,7 +11,10 @@ module.exports = class Interceptor {
       await next(call, callback);
     } catch (error) {
       if (error instanceof GRPCError === false && error.constructor.toString() !== GRPCError.toString()) {
-        this._logger.error("Unhandled exception has occurred in method {methodName}", { error, methodName: methodDefinition.path });
+        this._logger.error("Unhandled exception has occurred in method {methodName}", {
+          error,
+          methodName: methodDefinition.path
+        });
 
         if (callback) {
           const stackTrace = error.stack.replace(/\r?\n|\r/g, " ");
