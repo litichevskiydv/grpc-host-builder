@@ -30,12 +30,16 @@ const createServer = configurator => {
 
 const getMessage = async name => {
   const client = new packageObject.v1.Greeter(grpcBind, grpc.credentials.createInsecure());
-  return await new Promise((resolve, reject) => {
+
+  const message = await new Promise((resolve, reject) => {
     client.sayHello(new HelloRequest({ name: name }), (error, response) => {
       if (error) reject(error);
       else resolve(response.message);
     });
   });
+  client.close();
+
+  return message;
 };
 
 test("Must build simple server", async () => {
