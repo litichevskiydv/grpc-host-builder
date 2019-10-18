@@ -1,11 +1,12 @@
 dist: xenial
 language: node_js
 node_js:
-- '8'
-- '10'
-- '12'
-- lts/*
-- node
+  - "8"
+  - "10"
+  - "12"
+  - lts/*
+  - node
+install: npm ci
 script:
   - npm run build:protos
   - npm test
@@ -13,9 +14,11 @@ jobs:
   include:
     - stage: coverage
       node_js: lts/*
+      install: npm ci
       script: npm run build:protos && jest --coverage --coverageReporters=text-lcov | coveralls
     - stage: deploy
       node_js: lts/*
+      install: npm ci
       script: skip
       deploy:
         provider: npm
