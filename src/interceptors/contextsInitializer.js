@@ -1,6 +1,6 @@
-const asyncContext = require("processing-context");
+const processingContext = require("processing-context");
 
 module.exports = async function(call, methodDefinition, callback, next) {
-  asyncContext.create();
+  processingContext.create();
   await next(call, callback);
 };
