@@ -1,1 +1,3 @@
-module.exports = require("./grpcHostBuilder");
+module.exports = {
+  GrpcHostBuilder: require("./grpcHostBuilder")
+};

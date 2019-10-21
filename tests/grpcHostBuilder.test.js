@@ -2,7 +2,7 @@ const path = require("path");
 const grpc = require("grpc");
 const GRPCError = require("grpc-error");
 const protoLoader = require("@grpc/proto-loader");
-const GrpcHostBuilder = require("../src/index");
+const { GrpcHostBuilder } = require("../src/index");
 const { HelloRequest, HelloResponse } = require("./generated/greeter_pb").v1;
 
 const grpcBind = "0.0.0.0:3000";

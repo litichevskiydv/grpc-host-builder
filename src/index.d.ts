@@ -12,7 +12,7 @@ import {
 } from "grpc";
 import { type } from "os";
 
-declare class GrpcHostBuilder {
+export class GrpcHostBuilder {
   /**
    * @param {object} [options] grpc native options https://grpc.io/grpc/cpp/group__grpc__arg__keys.html
    */
@@ -70,8 +70,6 @@ declare class GrpcHostBuilder {
    */
   build(): Server;
 }
-
-export = GrpcHostBuilder;
 
 type ServerContext = {
   createLogger: (options?: object) => Logging.ILogger;
