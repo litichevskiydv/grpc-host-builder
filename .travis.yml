@@ -8,14 +8,18 @@ node_js:
   - node
 install: npm ci
 script:
-  - npm run build:protos
+  - npm run build:server:protos
+  - npm run build:client
   - npm test
 jobs:
   include:
     - stage: coverage
       node_js: lts/*
       install: npm ci
-      script: npm run build:protos && jest --coverage --coverageReporters=text-lcov | coveralls
+      script:
+        - npm run build:server:protos
+        - npm run build:client
+        - jest --coverage --coverageReporters=text-lcov | coveralls
     - stage: deploy
       node_js: lts/*
       install: npm ci
