@@ -1,4 +1,5 @@
 const { Server, ServerCredentials } = require("grpc");
+
 const { createLogger } = require("./logging/defaultLoggersFactory");
 const ExceptionsHandler = require("./interceptors/exceptionsHandler");
 const ContextsInitializer = require("./interceptors/contextsInitializer");
@@ -11,6 +12,11 @@ module.exports = class GrpcHostBuilder {
     this._index = 0;
     this._interceptorsDefinitions = [];
     this._servicesDefinitions = [];
+    this._methodsImplementationsWrappers = new Map()
+      .set("unary", require("./implementationsWrappers/unaryCall"))
+      .set("client_stream", require("./implementationsWrappers/ingoingStreamingCall"))
+      .set("server_stream", require("./implementationsWrappers/outgoingStreamingCall"))
+      .set("bidi", require("./implementationsWrappers/bidirectionalStreamingCall"));
 
     this._server = new Server(options);
     this._serverContext = { createLogger };
@@ -74,10 +80,7 @@ module.exports = class GrpcHostBuilder {
     methodImplementation = methodImplementation.bind(serviceImplementation);
 
     const methodType = GrpcHostBuilder._getMethodType(methodDefinition);
-    let serviceCallHandler =
-      methodType === "unary" || methodType === "client_stream"
-        ? async (call, callback) => callback(null, await methodImplementation(call))
-        : methodImplementation;
+    let serviceCallHandler = this._methodsImplementationsWrappers.get(methodType)(methodImplementation);
 
     for (let i = this._interceptorsDefinitions.length - 1; i > -1; i--) {
       const interceptorDefinition = this._interceptorsDefinitions[i];
