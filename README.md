@@ -16,7 +16,7 @@ Lightweight configurator for gRPC host
 # Usage
 
 ```javascript
-const GrpcHostBuilder = require("grpc-host-builder");
+const { GrpcHostBuilder } = require("grpc-host-builder");
 
 /*...*/
 
