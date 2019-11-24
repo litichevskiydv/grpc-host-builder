@@ -120,15 +120,17 @@ test("Must perform client streaming call", async () => {
   const numbers = [1, 2, 3, 4, 5, 6, 7];
 
   // When
-  const actualSum = (await client.sum(
-    from(
-      numbers.map(x => {
-        const request = new ClientOutgoingStreamingRequest();
-        request.setNumber(x);
-        return request;
-      })
+  const actualSum = (
+    await client.sum(
+      from(
+        numbers.map(x => {
+          const request = new ClientOutgoingStreamingRequest();
+          request.setNumber(x);
+          return request;
+        })
+      )
     )
-  )).getResult();
+  ).getResult();
 
   // Then
   const expectedSum = numbers.reduce((acc, one) => acc + one, 0);
@@ -186,16 +188,12 @@ test("Must perform bidirectional streaming call", async () => {
 
 test("Must build server with stateless interceptors", async () => {
   // Given
+  const interceptor = async (call, methodDefinition, callback, next, person, greetingText) => {
+    if (call.request.name === person) callback(null, { message: `${greetingText}, ${person}!` });
+    else await next(call, callback);
+  };
   server = createHost(x =>
-    x
-      .addInterceptor(async (call, methodDefinition, callback, next) => {
-        if (call.request.name === "Tom") callback(null, { message: "Hello again, Tom!" });
-        else await next(call, callback);
-      })
-      .addInterceptor(async (call, methodDefinition, callback, next) => {
-        if (call.request.name === "Jane") callback(null, { message: "Hello dear, Jane!" });
-        else await next(call, callback);
-      })
+    x.addInterceptor(interceptor, "Tom", "Hello again").addInterceptor(interceptor, "Jane", "Hello dear")
   );
 
   // When
@@ -210,15 +208,19 @@ test("Must build server with stateless interceptors", async () => {
 });
 
 class InterceptorForTom {
+  constructor(serverContext, person, greetingText) {
+    this._person = person;
+    this._greetingText = greetingText;
+  }
   async invoke(call, methodDefinition, callback, next) {
-    if (call.request.name === "Tom") callback(null, { message: "Hello again, Tom!" });
+    if (call.request.name === this._person) callback(null, { message: `${this._greetingText}, ${this._person}!` });
     else await next(call, callback);
   }
 }
 
 test("Must build server with stateful interceptor", async () => {
   // Given
-  server = createHost(x => x.addInterceptor(InterceptorForTom));
+  server = createHost(x => x.addInterceptor(InterceptorForTom, "Tom", "Hello again"));
 
   // When
   const messageForTom = await getMessage("Tom");

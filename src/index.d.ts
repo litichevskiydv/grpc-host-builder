@@ -27,6 +27,7 @@ export class GrpcHostBuilder {
   /**
    * Adds new interceptor to pipeline.
    * @param interceptor New interceptor.
+   * @param interceptorArguments Interceptor additional arguments.
    */
   addInterceptor(
     /**
@@ -34,19 +35,26 @@ export class GrpcHostBuilder {
      * @param methodDefinition Metadata for method implementation.
      * @param callback gRPC server callback.
      * @param next Next layers executor.
+     * @param arguments Interceptor additional arguments.
      */
     interceptor: (
       call: ServiceCall,
       methodDefinition: MethodDefinition<any, any>,
       callback: sendUnaryData<any> | null,
-      next: handleServiceCall<any, any>
-    ) => Promise<void>
+      next: handleServiceCall<any, any>,
+      ...arguments: any[]
+    ) => Promise<void>,
+    ...interceptorArguments: any[]
   ): GrpcHostBuilder;
   /**
    * Adds new interceptor to pipeline.
    * @param interceptor Constructor for new interceptor.
+   * @param interceptorArguments Interceptor additional arguments.
    */
-  addInterceptor(interceporConstructor: new (serverContext: ServerContext) => IInterceptor): GrpcHostBuilder;
+  addInterceptor(
+    interceporConstructor: new (serverContext: ServerContext, ...arguments: any[]) => IInterceptor,
+    ...interceptorArguments: any[]
+  ): GrpcHostBuilder;
 
   /**
    * Adds implementation of a new service.
@@ -95,7 +103,9 @@ type handleServiceCall<RequestType, ResponseType> =
 type handleUnaryCall<RequestType, ResponseType> = (call: ServerUnaryCall<RequestType>, callback: sendUnaryData<ResponseType>) => Promise<void>; // prettier-ignore
 type handleClientStreamingCall<RequestType, ResponseType> = (call: ServerReadableStream<RequestType>, callback: sendUnaryData<ResponseType>) => Promise<void>; // prettier-ignore
 type handleServerStreamingCall<RequestType, ResponseType> = (call: ServerWriteableStream<RequestType>) => Promise<void>;
-type handleBidiStreamingCall<RequestType, ResponseType> = (call: ServerDuplexStream<RequestType, ResponseType>) => Promise<void>; // prettier-ignore
+type handleBidiStreamingCall<RequestType, ResponseType> = (
+  call: ServerDuplexStream<RequestType, ResponseType>
+) => Promise<void>;
 
 /**
  * Used for calls that are streaming from the client side.
