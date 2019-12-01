@@ -222,10 +222,11 @@ interface IInterceptor {
 
 declare namespace Logging {
   interface ILogger {
-    fatal(message: string, payload?: object): void;
     error(message: string, payload?: object): void;
     warn(message: string, payload?: object): void;
     info(message: string, payload?: object): void;
+    verbose(message: string, payload?: object): void;
     debug(message: string, payload?: object): void;
+    silly(message: string, payload?: object): void;
   }
 }
