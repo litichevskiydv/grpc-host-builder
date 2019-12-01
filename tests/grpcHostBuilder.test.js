@@ -58,12 +58,14 @@ const createHost = configurator => {
         });
       },
       sum: call =>
-        call.source.pipe(
-          reduce((acc, one) => {
-            acc.result = acc.result + one.number;
-            return acc;
-          }, new ServerIngoingStreamingResponse({ result: 0 }))
-        ),
+        call.source
+          .pipe(
+            reduce((acc, one) => {
+              acc.result = acc.result + one.number;
+              return acc;
+            }, new ServerIngoingStreamingResponse({ result: 0 }))
+          )
+          .toPromise(),
       range: call => {
         const request = new ServerOutgoingStreamingRequest(call.request);
         return new Observable(subscriber => {
@@ -188,9 +190,9 @@ test("Must perform bidirectional streaming call", async () => {
 
 test("Must build server with stateless interceptors", async () => {
   // Given
-  const interceptor = async (call, methodDefinition, callback, next, person, greetingText) => {
-    if (call.request.name === person) callback(null, { message: `${greetingText}, ${person}!` });
-    else await next(call, callback);
+  const interceptor = async (call, methodDefinition, next, person, greetingText) => {
+    if (call.request.name === person) return { message: `${greetingText}, ${person}!` };
+    return await next(call);
   };
   server = createHost(x =>
     x.addInterceptor(interceptor, "Tom", "Hello again").addInterceptor(interceptor, "Jane", "Hello dear")
@@ -212,9 +214,9 @@ class InterceptorForTom {
     this._person = person;
     this._greetingText = greetingText;
   }
-  async invoke(call, methodDefinition, callback, next) {
-    if (call.request.name === this._person) callback(null, { message: `${this._greetingText}, ${this._person}!` });
-    else await next(call, callback);
+  async invoke(call, methodDefinition, next) {
+    if (call.request.name === this._person) return { message: `${this._greetingText}, ${this._person}!` };
+    return await next(call);
   }
 }
 
@@ -300,17 +302,19 @@ describe("Must test the handling of exceptions thrown in a client streaming call
       implementation: () => {
         return new Observable(subscriber => {
           subscriber.error(new Error("Something went wrong"));
-        });
+        }).toPromise();
       }
     },
     {
       toString: () => "Exception caused in Observable next method",
       implementation: () =>
-        from([1]).pipe(
-          map(x => {
-            if (x === 1) throw new Error("Something went wrong");
-          })
-        )
+        from([1])
+          .pipe(
+            map(x => {
+              if (x === 1) throw new Error("Something went wrong");
+            })
+          )
+          .toPromise()
     },
     {
       toString: () => "Exception caused before result was returned",
