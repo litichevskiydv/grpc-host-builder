@@ -25,11 +25,11 @@ class InterceptorForTom {
     this._logger = serverContext.createLogger();
   }
 
-  async invoke(call, methodDefinition, callback, next) {
+  async invoke(call, methodDefinition, next) {
     /*...*/
 
-    if (call.request.name === "Tom") callback(null, { message: "Hello again, Tom!" });
-    else await next(call, callback);
+    if (call.request.name === "Tom") return { message: "Hello again, Tom!" };
+    return await next(call);
   }
 }
 
@@ -38,9 +38,9 @@ class InterceptorForTom {
 const server = new GrpcHostBuilder()
   .useLoggersFactory(loggersFactory)
   .addInterceptor(InterceptorForTom)
-  .addInterceptor(async (call, methodDefinition, callback, next) => {
-    if (call.request.name === "Jane") callback(null, { message: "Hello dear, Jane!" });
-    else await next(call, callback);
+  .addInterceptor(async (call, methodDefinition, next) => {
+    if (call.request.name === "Jane") return { message: "Hello dear, Jane!" };
+    return await next(call);
   })
   .addService(packageObject.v1.Greeter.service, {
     sayHello: call => {
