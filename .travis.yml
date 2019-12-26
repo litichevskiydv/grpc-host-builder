@@ -17,14 +17,18 @@ jobs:
   include:
     - stage: coverage
       node_js: lts/*
-      install: npm ci
+      install:
+        - npm ci
+        - npm i grpc --no-save
       script:
         - npm run build:server:protos
         - npm run build:client
         - jest --coverage --coverageReporters=text-lcov | coveralls
     - stage: deploy
       node_js: lts/*
-      install: npm ci
+      install:
+        - npm ci
+        - npm i grpc --no-save
       script: skip
       deploy:
         provider: npm
