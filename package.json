@@ -51,12 +51,12 @@
     "serialize-error": "^5.0.0"
   },
   "peerDependencies": {
-    "grpc": "^1.20.2"
+    "grpc": "^1.24.2"
   },
   "devDependencies": {
     "@grpc/proto-loader": "^0.4.0",
     "coveralls": "^3.0.3",
-    "grpc": "^1.20.2",
+    "grpc": "^1.24.2",
     "grpc-instrumentum": "^2.0.3",
     "jest": "^24.3.1",
     "jest-extended": "^0.11.1",
