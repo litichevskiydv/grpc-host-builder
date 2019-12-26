@@ -33,15 +33,6 @@
     "url": "https://github.com/litichevskiydv/grpc-host-builder/issues"
   },
   "homepage": "https://github.com/litichevskiydv/grpc-host-builder#readme",
-  "devDependencies": {
-    "@grpc/proto-loader": "^0.4.0",
-    "coveralls": "^3.0.3",
-    "grpc-instrumentum": "^2.0.3",
-    "jest": "^24.3.1",
-    "jest-extended": "^0.11.1",
-    "mkdirp": "^0.5.1",
-    "protobufjs": "^6.8.8"
-  },
   "jest": {
     "testEnvironment": "node",
     "setupFilesAfterEnv": [
@@ -53,11 +44,22 @@
     ]
   },
   "dependencies": {
-    "grpc": "^1.24.2",
     "grpc-error": "^1.0.0",
     "processing-context": "^1.0.0",
     "rxjs": "^6.5.3",
     "rxjs-stream": "^3.1.0",
     "serialize-error": "^5.0.0"
+  },
+  "peerDependencies": {
+    "grpc": "^1.20.2"
+  },
+  "devDependencies": {
+    "@grpc/proto-loader": "^0.4.0",
+    "coveralls": "^3.0.3",
+    "grpc-instrumentum": "^2.0.3",
+    "jest": "^24.3.1",
+    "jest-extended": "^0.11.1",
+    "mkdirp": "^0.5.1",
+    "protobufjs": "^6.8.8"
   }
 }

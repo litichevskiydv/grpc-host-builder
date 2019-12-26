@@ -6,7 +6,9 @@ node_js:
   - "12"
   - lts/*
   - node
-install: npm ci
+install:
+  - npm ci
+  - npm i grpc --no-save
 script:
   - npm run build:server:protos
   - npm run build:client
