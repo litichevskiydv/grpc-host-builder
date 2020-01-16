@@ -10,9 +10,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "build:server:protos": "mkdirp ./tests/generated/server && pbjs -r greeter -t static-module -w commonjs --no-verify -o ./tests/generated/server/greeter_pb.js ./tests/protos/greeter.proto",
-    "build:server:types": "mkdirp ./tests/generated/server && pbts -o ./tests/generated/server/greeter_pb.d.ts ./tests/generated/server/greeter_pb.js",
-    "build:server:swagger": "mkdirp ./tests/generated/server && grpc-gen-swagger --swagger_opt=json_names_for_fields=true --swagger_out=logtostderr=true:./tests/generated/server -I ./tests/protos/ greeter.proto",
+    "build:server:protos": "make-dir ./tests/generated/server && pbjs -r greeter -t static-module -w commonjs --no-verify -o ./tests/generated/server/greeter_pb.js ./tests/protos/greeter.proto",
+    "build:server:types": "make-dir ./tests/generated/server && pbts -o ./tests/generated/server/greeter_pb.d.ts ./tests/generated/server/greeter_pb.js",
+    "build:server:swagger": "make-dir ./tests/generated/server && grpc-gen-swagger --swagger_opt=json_names_for_fields=true --swagger_out=logtostderr=true:./tests/generated/server -I ./tests/protos/ greeter.proto",
     "build:server": "npm run build:server:protos && npm run build:server:types && npm run build:server:swagger",
     "build:client": "grpc-gen-client --out ./tests/generated/client --include ./tests/protos/ greeter.proto",
     "build": "npm run build:server && npm run build:client",
@@ -54,13 +54,14 @@
     "grpc": "^1.24.2"
   },
   "devDependencies": {
-    "@grpc/proto-loader": "^0.4.0",
-    "coveralls": "^3.0.3",
+    "@types/jest": "^24.9.0",
+    "coveralls": "^3.0.9",
     "grpc": "^1.24.2",
     "grpc-instrumentum": "^2.0.3",
-    "jest": "^24.3.1",
-    "jest-extended": "^0.11.1",
-    "mkdirp": "^0.5.1",
+    "grpc-pbf-loader": "^1.0.2",
+    "jest": "^24.9.0",
+    "jest-extended": "^0.11.2",
+    "make-dir-cli": "^2.0.0",
     "protobufjs": "^6.8.8"
   }
 }

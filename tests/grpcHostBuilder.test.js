@@ -1,7 +1,7 @@
 const path = require("path");
 const grpc = require("grpc");
 const GRPCError = require("grpc-error");
-const protoLoader = require("@grpc/proto-loader");
+const protoLoader = require("grpc-pbf-loader").packageDefinition;
 const { from, Observable, Subject } = require("rxjs");
 const { map, reduce } = require("rxjs/operators");
 
@@ -37,7 +37,7 @@ expect.extend({
 const grpcBind = "0.0.0.0:3000";
 const packageObject = grpc.loadPackageDefinition(
   protoLoader.loadSync(path.join(__dirname, "./protos/greeter.proto"), {
-    includeDirs: [path.join(__dirname, "./include/"), path.join(__dirname, "../node_modules/grpc-tools/bin/")]
+    includeDirs: [path.join(__dirname, "./include/")]
   })
 );
 let server = null;
