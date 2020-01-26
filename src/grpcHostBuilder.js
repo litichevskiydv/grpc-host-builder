@@ -54,8 +54,8 @@ module.exports = class GrpcHostBuilder {
 
   /**
    * Adds implementation of a new service.
-   * @param {*} definition Definition of the service.
-   * @param {*} implementation Implementation of the service.
+   * @param {import("grpc").ServiceDefinition} definition Definition of the service.
+   * @param {import("./index").UntypedServiceImplementation} implementation Implementation of the service.
    */
   addService(definition, implementation) {
     this._servicesDefinitions.push({ index: this._index++, definition: definition, implementation: implementation });
@@ -72,11 +72,22 @@ module.exports = class GrpcHostBuilder {
     return this;
   }
 
+  /**
+   * @param {import("grpc").MethodDefinition} methodDefinition
+   * @returns {"bidi" | "client_stream" | "server_stream" | "unary"}
+   */
   static _getMethodType(methodDefinition) {
     if (methodDefinition.requestStream) return methodDefinition.responseStream ? "bidi" : "client_stream";
     return methodDefinition.responseStream ? "server_stream" : "unary";
   }
 
+  /**
+   * @param {number} serviceIndex
+   * @param {import("./index").UntypedServiceImplementation} serviceImplementation
+   * @param {string} methodName
+   * @param {import("grpc").MethodDefinition} methodDefinition
+   * @returns {import("grpc").handleCall}
+   */
   _getMethodImplementation(serviceIndex, serviceImplementation, methodName, methodDefinition) {
     let methodImplementation = serviceImplementation[methodName];
     if (methodImplementation === undefined) methodImplementation = serviceImplementation[methodDefinition.originalName];

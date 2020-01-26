@@ -1,5 +1,9 @@
 const { streamToRx } = require("rxjs-stream");
 
+/**
+ * @param {import("../../index").handleClientStreamingCall<any, any>} handler
+ * @returns {import("grpc").handleClientStreamingCall<any, any>}
+ */
 module.exports = function(handler) {
   return async (call, callback) => {
     call.source = streamToRx(call);

@@ -12,6 +12,12 @@ const createGrpcError = error => {
     : new GRPCError(error, grpc.status.INTERNAL);
 };
 
+/**
+ * @param {import("grpc").MethodDefinition} methodDefinition
+ * @param {import("grpc").handleCall<any, any>} handler
+ * @param {import("../index").Logging.ILogger} logger
+ * @returns {import("grpc").handleCall<any, any>}
+ */
 module.exports = function(methodDefinition, handler, logger) {
   return async (call, callback) => {
     try {

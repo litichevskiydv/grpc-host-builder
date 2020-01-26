@@ -197,9 +197,7 @@ type serviceMethodImplementation<RequestType, ResponseType> =
   | serviceClientStreamingMethodImplementation<RequestType, ResponseType>
   | serviceServerStreamingMethodImplementation<RequestType, ResponseType>
   | serviceBidiStreamingMethodImplementation<RequestType, ResponseType>;
-type serviceUnaryMethodImplementation<RequestType, ResponseType> = (
-  call: ServerUnaryCall<RequestType>
-) => Promise<ResponseType>;
+type serviceUnaryMethodImplementation<RequestType, ResponseType> = (call: ServerUnaryCall<RequestType>) => Promise<ResponseType>; // prettier-ignore
 type serviceClientStreamingMethodImplementation<RequestType, ResponseType> = (call: ServerIngoingStreamingCall<RequestType>) => Promise<ResponseType>; // prettier-ignore
 type serviceServerStreamingMethodImplementation<RequestType, ResponseType> = (call: ServerOutgoingStreamingCall<RequestType>) => Promise<Observable<ResponseType>>; // prettier-ignore
 type serviceBidiStreamingMethodImplementation<RequestType, ResponseType> = (call: ServerBidiStreamingCall<RequestType>) => Promise<Observable<ResponseType>>; // prettier-ignore
