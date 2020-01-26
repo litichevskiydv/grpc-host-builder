@@ -5,7 +5,6 @@ import {
   ServerReadableStream,
   ServerWriteableStream,
   ServerDuplexStream,
-  ServiceError,
   Metadata,
   ServerCredentials,
   Server
