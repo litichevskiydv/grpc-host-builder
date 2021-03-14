@@ -1,3 +1,6 @@
 module.exports = {
-  GrpcHostBuilder: require("./grpcHostBuilder")
+  GrpcHostBuilder: require("./grpcHostBuilder"),
+  Errors: {
+    GrpcError: require("./errors/grpcError"),
+  },
 };

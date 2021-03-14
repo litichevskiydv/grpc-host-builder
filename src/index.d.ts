@@ -3,8 +3,9 @@ import {
   MethodDefinition,
   ServerUnaryCall,
   ServerReadableStream,
-  ServerWriteableStream,
+  ServerWritableStream,
   ServerDuplexStream,
+  status,
   Metadata,
   ServerCredentials,
   Server,
@@ -13,7 +14,7 @@ import { Observable } from "rxjs";
 
 export class GrpcHostBuilder {
   /**
-   * @param {object} [options] grpc native options https://grpc.io/grpc/cpp/group__grpc__arg__keys.html
+   * @param options gRPC native options https://grpc.io/grpc/cpp/group__grpc__arg__keys.html
    */
   constructor(options?: object);
 
@@ -80,16 +81,20 @@ type ServerContext = {
   createLogger: (options?: object) => Logging.ILogger;
 };
 
-type ServiceCall = ServerUnaryCall<any> | ServerReadableStream<any> | ServerWriteableStream<any> | ServerDuplexStream<any, any>;
+type ServiceCall =
+  | ServerUnaryCall<any, any>
+  | ServerReadableStream<any, any>
+  | ServerWritableStream<any, any>
+  | ServerDuplexStream<any, any>;
 
 type handleServiceCall<RequestType, ResponseType> =
   | handleUnaryCall<RequestType, ResponseType>
   | handleClientStreamingCall<RequestType, ResponseType>
   | handleServerStreamingCall<RequestType, ResponseType>
   | handleBidiStreamingCall<RequestType, ResponseType>;
-type handleUnaryCall<RequestType, ResponseType> = (call: ServerUnaryCall<RequestType>) => Promise<ResponseType>;
-type handleClientStreamingCall<RequestType, ResponseType> = (call: ServerReadableStream<RequestType>) => Promise<ResponseType>; // prettier-ignore
-type handleServerStreamingCall<RequestType, ResponseType> = (call: ServerWriteableStream<RequestType>) => Promise<void>;
+type handleUnaryCall<RequestType, ResponseType> = (call: ServerUnaryCall<RequestType, ResponseType>) => Promise<ResponseType>; // prettier-ignore
+type handleClientStreamingCall<RequestType, ResponseType> = (call: ServerReadableStream<RequestType, ResponseType>) => Promise<ResponseType>; // prettier-ignore
+type handleServerStreamingCall<RequestType, ResponseType> = (call: ServerWritableStream<RequestType, ResponseType>) => Promise<void>; // prettier-ignore
 type handleBidiStreamingCall<RequestType, ResponseType> = (call: ServerDuplexStream<RequestType, ResponseType>) => Promise<void>; // prettier-ignore
 
 /**
@@ -193,24 +198,70 @@ type serviceMethodImplementation<RequestType, ResponseType> =
   | serviceClientStreamingMethodImplementation<RequestType, ResponseType>
   | serviceServerStreamingMethodImplementation<RequestType, ResponseType>
   | serviceBidiStreamingMethodImplementation<RequestType, ResponseType>;
-type serviceUnaryMethodImplementation<RequestType, ResponseType> = (call: ServerUnaryCall<RequestType>) => Promise<ResponseType>; // prettier-ignore
+type serviceUnaryMethodImplementation<RequestType, ResponseType> = (call: ServerUnaryCall<RequestType, ResponseType>) => Promise<ResponseType>; // prettier-ignore
 type serviceClientStreamingMethodImplementation<RequestType, ResponseType> = (call: ServerIngoingStreamingCall<RequestType>) => Promise<ResponseType>; // prettier-ignore
 type serviceServerStreamingMethodImplementation<RequestType, ResponseType> = (call: ServerOutgoingStreamingCall<RequestType>) => Promise<Observable<ResponseType>>; // prettier-ignore
 type serviceBidiStreamingMethodImplementation<RequestType, ResponseType> = (call: ServerBidiStreamingCall<RequestType>) => Promise<Observable<ResponseType>>; // prettier-ignore
 type UntypedServiceImplementation = { [name: string]: serviceMethodImplementation<any, any> };
 
-interface IInterceptor {
+export interface IInterceptor {
   /**
    * Interceptor implementation.
    * @param call Server call.
    * @param methodDefinition Metadata for method implementation.
    * @param next Next layers executor.
    */
-  invoke(call: ServiceCall, methodDefinition: MethodDefinition<any, any>, next: handleServiceCall<any, any>): Promise<any>;
+  invoke(
+    call: ServiceCall,
+    methodDefinition: MethodDefinition<any, any>,
+    next: handleServiceCall<any, any>
+  ): Promise<any>;
 }
 
-declare namespace Logging {
-  interface ILogger {
+export namespace Errors {
+  interface GrpcErrorOptions {
+    /**
+     * gRPC response status code
+     */
+    statusCode?: status;
+
+    /**
+     * gRPC response metadata
+     */
+    metadata?: Metadata | { [key: string]: string };
+
+    /**
+     * Error details
+     */
+    details?: Array<any>;
+
+    /**
+     * Inner error
+     */
+    innerError?: Error;
+  }
+
+  export class GrpcError extends Error {
+    /**
+     * @param message Error message
+     * @param options Error options
+     */
+    constructor(message: string, options?: GrpcErrorOptions);
+
+    /**
+     * gRPC response status code
+     */
+    code: status;
+
+    /**
+     * gRPC response metadata
+     */
+    metadata: Metadata;
+  }
+}
+
+export namespace Logging {
+  export interface ILogger {
     error(message: string, payload?: object): void;
     warn(message: string, payload?: object): void;
     info(message: string, payload?: object): void;
