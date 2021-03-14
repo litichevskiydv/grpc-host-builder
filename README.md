@@ -35,7 +35,7 @@ class InterceptorForTom {
 
 /*...*/
 
-const server = new GrpcHostBuilder()
+const server = await new GrpcHostBuilder()
   .useLoggersFactory(loggersFactory)
   .addInterceptor(InterceptorForTom)
   .addInterceptor(async (call, methodDefinition, next) => {
@@ -49,5 +49,5 @@ const server = new GrpcHostBuilder()
     }
   })
   .bind(grpcBind)
-  .build();
+  .buildAsync();
 ```
