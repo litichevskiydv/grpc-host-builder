@@ -7,8 +7,8 @@ import {
   ServerDuplexStream,
   Metadata,
   ServerCredentials,
-  Server
-} from "grpc";
+  Server,
+} from "@grpc/grpc-js";
 import { Observable } from "rxjs";
 
 export class GrpcHostBuilder {
@@ -73,18 +73,14 @@ export class GrpcHostBuilder {
   /**
    * Builds the server.
    */
-  build(): Server;
+  buildAsync(): Promise<Server>;
 }
 
 type ServerContext = {
   createLogger: (options?: object) => Logging.ILogger;
 };
 
-type ServiceCall =
-  | ServerUnaryCall<any>
-  | ServerReadableStream<any>
-  | ServerWriteableStream<any>
-  | ServerDuplexStream<any, any>;
+type ServiceCall = ServerUnaryCall<any> | ServerReadableStream<any> | ServerWriteableStream<any> | ServerDuplexStream<any, any>;
 
 type handleServiceCall<RequestType, ResponseType> =
   | handleUnaryCall<RequestType, ResponseType>
@@ -210,11 +206,7 @@ interface IInterceptor {
    * @param methodDefinition Metadata for method implementation.
    * @param next Next layers executor.
    */
-  invoke(
-    call: ServiceCall,
-    methodDefinition: MethodDefinition<any, any>,
-    next: handleServiceCall<any, any>
-  ): Promise<any>;
+  invoke(call: ServiceCall, methodDefinition: MethodDefinition<any, any>, next: handleServiceCall<any, any>): Promise<any>;
 }
 
 declare namespace Logging {

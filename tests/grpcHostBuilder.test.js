@@ -1,10 +1,12 @@
 const path = require("path");
 const grpc = require("grpc");
-const GRPCError = require("grpc-error");
+const grpcJs = require("@grpc/grpc-js");
 const protoLoader = require("grpc-pbf-loader").packageDefinition;
 const { from, Observable, Subject } = require("rxjs");
 const { map, reduce } = require("rxjs/operators");
+const { async } = require("rxjs/internal/scheduler/async");
 
+const GrpcError = require("../src/errors/grpcError");
 const { GrpcHostBuilder } = require("../src/index");
 
 const {
@@ -23,7 +25,7 @@ const {
   GreeterClient
 } = require("./generated/client/greeter_client_pb").v1;
 
-grpc.setLogVerbosity(grpc.logVerbosity.ERROR + 1);
+grpcJs.setLogVerbosity(grpcJs.logVerbosity.ERROR + 1);
 expect.extend({
   containsError(received) {
     if (Object.values(received).find(x => x instanceof Error)) return { pass: true };
@@ -35,7 +37,7 @@ expect.extend({
 });
 
 const grpcBind = "0.0.0.0:3000";
-const packageObject = grpc.loadPackageDefinition(
+const packageObject = grpcJs.loadPackageDefinition(
   protoLoader.loadSync(path.join(__dirname, "./protos/greeter.proto"), {
     includeDirs: [path.join(__dirname, "./include/")]
   })
@@ -47,8 +49,8 @@ let client = null;
  * Creates and starts gRPC server
  * @param {function(GrpcHostBuilder):GrpcHostBuilder} configurator Server builder configurator
  */
-const createHost = configurator => {
-  return configurator(new GrpcHostBuilder())
+const createHost = async configurator => {
+  return await configurator(new GrpcHostBuilder())
     .addService(packageObject.v1.Greeter.service, {
       sayHello: call => {
         const request = new ServerUnaryRequest(call.request);
@@ -77,7 +79,7 @@ const createHost = configurator => {
       select: call => call.source.pipe(map(x => new ServerBidiStreamingResponse({ value: x.value + 1 })))
     })
     .bind(grpcBind)
-    .build();
+    .buildAsync();
 };
 
 const getMessage = async name => {
@@ -99,6 +101,11 @@ const getSpanId = async callerSpanId => {
   return (await client.sayHello(request, metadata)).getSpanId();
 };
 
+const prepareErrorMatchingObject = (innerErrorMessage) =>
+  expect.objectContaining({
+    message: "13 INTERNAL: Unhandled exception has occurred"
+  });
+
 afterEach(() => {
   if (client) client.close();
   if (server) server.forceShutdown();
@@ -106,7 +113,7 @@ afterEach(() => {
 
 test("Must perform unary call", async () => {
   // Given
-  server = createHost(x => x);
+  server = await createHost(x => x);
 
   // When
   const actualMessage = await getMessage("Tom");
@@ -117,7 +124,7 @@ test("Must perform unary call", async () => {
 
 test("Must perform client streaming call", async () => {
   // Given
-  server = createHost(x => x);
+  server = await createHost(x => x);
   client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
   const numbers = [1, 2, 3, 4, 5, 6, 7];
 
@@ -141,7 +148,7 @@ test("Must perform client streaming call", async () => {
 
 test("Must perform server streaming call", async () => {
   // Given
-  server = createHost(x => x);
+  server = await createHost(x => x);
   client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
 
   // When
@@ -159,7 +166,7 @@ test("Must perform server streaming call", async () => {
 
 test("Must perform bidirectional streaming call", async () => {
   // Given
-  server = createHost(x => x);
+  server = await createHost(x => x);
   client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
 
   // When
@@ -194,7 +201,7 @@ test("Must build server with stateless interceptors", async () => {
     if (call.request.name === person) return { message: `${greetingText}, ${person}!` };
     return await next(call);
   };
-  server = createHost(x =>
+  server = await createHost(x => 
     x.addInterceptor(interceptor, "Tom", "Hello again").addInterceptor(interceptor, "Jane", "Hello dear")
   );
 
@@ -222,7 +229,7 @@ class InterceptorForTom {
 
 test("Must build server with stateful interceptor", async () => {
   // Given
-  server = createHost(x => x.addInterceptor(InterceptorForTom, "Tom", "Hello again"));
+  server = await createHost(x => x.addInterceptor(InterceptorForTom, "Tom", "Hello again"));
 
   // When
   const messageForTom = await getMessage("Tom");
@@ -237,29 +244,30 @@ test("Must catch and log common error", async () => {
   // Given
   const mockLogger = { error: jest.fn() };
   const mockLoggersFactory = () => mockLogger;
+  const errorMessage = "Something went wrong";
 
-  server = createHost(x =>
+  server = await createHost((x) =>
     x
       .addInterceptor(() => {
-        throw new Error("Something went wrong");
+        throw new Error(errorMessage);
       })
       .useLoggersFactory(mockLoggersFactory)
   );
 
   // When, Then
-  await expect(getMessage("Tom")).rejects.toEqual(new Error("13 INTERNAL: Something went wrong"));
+  await expect(getMessage("Tom")).rejects.toMatchObject(prepareErrorMatchingObject(errorMessage));
   expect(mockLogger.error).toHaveBeenCalledWith(expect.any(String), expect.containsError());
 });
 
-test("Must catch and not log GRPCError", async () => {
+test("Must catch and not log GrpcError", async () => {
   // Given
   const mockLogger = { error: jest.fn() };
   const mockLoggersFactory = () => mockLogger;
 
-  server = createHost(x =>
+  server = await createHost((x) =>
     x
       .addInterceptor(() => {
-        throw new GRPCError("Wrong payload", grpc.status.INVALID_ARGUMENT, null);
+        throw new GrpcError("Wrong payload", { statusCode: grpcJs.status.INVALID_ARGUMENT });
       })
       .useLoggersFactory(mockLoggersFactory)
   );
@@ -273,26 +281,27 @@ test("Must handle error with non ASCII message", async () => {
   // Given
   const mockLogger = { error: jest.fn() };
   const mockLoggersFactory = () => mockLogger;
+  const errorMessage = "Что-то пошло не так";
 
-  server = createHost(x =>
+  server = await createHost(x =>
     x
       .addInterceptor(() => {
-        throw new Error("Что-то пошло не так");
+        throw new Error(errorMessage);
       })
       .useLoggersFactory(mockLoggersFactory)
   );
 
   // When, Then
-  await expect(getMessage("Tom")).rejects.toEqual(new Error("13 INTERNAL: Что-то пошло не так"));
+  await expect(getMessage("Tom")).rejects.toMatchObject(prepareErrorMatchingObject(errorMessage));
   expect(mockLogger.error).toBeCalledTimes(1);
 });
 
-test("Must throw error if server method was not implemented", () => {
+test("Must throw error if server method was not implemented", async () => {
   // Given
   const builder = new GrpcHostBuilder().addService(packageObject.v1.Greeter.service, {});
 
   // When, Then
-  expect(() => builder.build()).toThrowWithMessage(Error, "Method /v1.Greeter/SayHello is not implemented");
+  await expect(() => builder.buildAsync()).rejects.toEqual(new Error("Method /v1.Greeter/SayHello is not implemented"));
 });
 
 describe("Must test the handling of exceptions thrown in a client streaming call implementation", () => {
@@ -329,7 +338,7 @@ describe("Must test the handling of exceptions thrown in a client streaming call
     const mockLogger = { error: jest.fn() };
     const mockLoggersFactory = () => mockLogger;
 
-    server = new GrpcHostBuilder()
+    server = await new GrpcHostBuilder()
       .useLoggersFactory(mockLoggersFactory)
       .addService(packageObject.v1.Greeter.service, {
         sayHello: () => {},
@@ -338,7 +347,7 @@ describe("Must test the handling of exceptions thrown in a client streaming call
         select: () => {}
       })
       .bind(grpcBind)
-      .build();
+      .buildAsync();
 
     // When, Then
     client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
@@ -346,7 +355,7 @@ describe("Must test the handling of exceptions thrown in a client streaming call
     const firstRequest = new ClientOutgoingStreamingRequest();
     firstRequest.setNumber(1);
 
-    await expect(client.sum(from([firstRequest]))).rejects.toEqual(new Error("13 INTERNAL: Something went wrong")); // prettier-ignore
+    await expect(client.sum(from([firstRequest]))).rejects.toMatchObject(prepareErrorMatchingObject("Something went wrong"));
     expect(mockLogger.error).toHaveBeenCalledWith(expect.any(String), expect.containsError());
   });
 });
@@ -378,26 +387,26 @@ describe("Must test the handling of exceptions thrown in a server streaming call
     }
   ];
 
-  test.each(testCases)("%s", async testCase => {
+  test.each(testCases)("%s", async (testCase) => {
     // Given
     const mockLogger = { error: jest.fn() };
     const mockLoggersFactory = () => mockLogger;
 
-    server = new GrpcHostBuilder()
+    server = await new GrpcHostBuilder()
       .useLoggersFactory(mockLoggersFactory)
       .addService(packageObject.v1.Greeter.service, {
         sayHello: () => {},
         sum: () => {},
         range: testCase.implementation,
-        select: () => {}
+        select: () => {},
       })
       .bind(grpcBind)
-      .build();
+      .buildAsync();
 
     // When, Then
     client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
 
-    await expect(client.range(new ClientIngoingStreamingRequest()).toPromise()).rejects.toEqual(new Error("13 INTERNAL: Something went wrong")); // prettier-ignore
+    await expect(client.range(new ClientIngoingStreamingRequest()).toPromise()).rejects.toMatchObject(prepareErrorMatchingObject("Something went wrong")); // prettier-ignore
     expect(mockLogger.error).toHaveBeenCalledWith(expect.any(String), expect.containsError());
   });
 });
@@ -416,7 +425,7 @@ describe("Must test the handling of exceptions thrown in a server bidirectional 
       toString: () => "Exception caused in Observable next method",
       implementation: () =>
         from([1]).pipe(
-          map(x => {
+          map((x) => {
             if (x === 1) throw new Error("Something went wrong");
           })
         )
@@ -429,12 +438,12 @@ describe("Must test the handling of exceptions thrown in a server bidirectional 
     }
   ];
 
-  test.each(testCases)("%s", async testCase => {
+  test.each(testCases)("%s", async (testCase) => {
     // Given
     const mockLogger = { error: jest.fn() };
     const mockLoggersFactory = () => mockLogger;
 
-    server = new GrpcHostBuilder()
+    server = await new GrpcHostBuilder()
       .useLoggersFactory(mockLoggersFactory)
       .addService(packageObject.v1.Greeter.service, {
         sayHello: () => {},
@@ -443,7 +452,7 @@ describe("Must test the handling of exceptions thrown in a server bidirectional 
         select: testCase.implementation
       })
       .bind(grpcBind)
-      .build();
+      .buildAsync();
 
     // When, Then
     client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
@@ -451,7 +460,7 @@ describe("Must test the handling of exceptions thrown in a server bidirectional 
     const firstRequest = new ClientBidiStreamingRequest();
     firstRequest.setValue(1);
 
-    await expect(client.select(from([firstRequest])).toPromise()).rejects.toEqual(new Error("13 INTERNAL: Something went wrong")); // prettier-ignore
+    await expect(client.select(from([firstRequest])).toPromise()).rejects.toMatchObject(prepareErrorMatchingObject("Something went wrong")); // prettier-ignore
     expect(mockLogger.error).toHaveBeenCalledWith(expect.any(String), expect.containsError());
   });
 });
@@ -459,7 +468,7 @@ describe("Must test the handling of exceptions thrown in a server bidirectional 
 test("Must transfer value through metadata", async () => {
   // Given
   const expectedSpanId = "test_span_id";
-  server = createHost(x => x);
+  server = await createHost(x => x);
 
   // When
   const actualSpanId = await getSpanId(expectedSpanId);

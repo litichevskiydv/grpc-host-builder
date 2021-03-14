@@ -1,4 +1,4 @@
-const { Server, ServerCredentials } = require("grpc");
+const { Server, ServerCredentials } = require("@grpc/grpc-js");
 
 const { createLogger } = require("./logging/defaultLoggersFactory");
 const ContextsInitializer = require("./interceptors/contextsInitializer");
@@ -15,8 +15,8 @@ module.exports = class GrpcHostBuilder {
     this._servicesDefinitions = [];
     this._methodsImplementationsWrappers = new Map()
       .set("unary", require("./implementationsWrappers/callsFinalizers/unaryCall"))
-      .set("client_stream", require("./implementationsWrappers/callsFinalizers/ingoingStreamingCall"))
-      .set("server_stream", require("./implementationsWrappers/callsFinalizers/outgoingStreamingCall"))
+      .set("clientStream", require("./implementationsWrappers/callsFinalizers/ingoingStreamingCall"))
+      .set("serverStream", require("./implementationsWrappers/callsFinalizers/outgoingStreamingCall"))
       .set("bidi", require("./implementationsWrappers/callsFinalizers/bidirectionalStreamingCall"));
 
     this._server = new Server(options);
@@ -47,14 +47,14 @@ module.exports = class GrpcHostBuilder {
 
     this._interceptorsDefinitions.push({
       index: this._index++,
-      interceptor: (call, methodDefinition, next) => interceptor(call, methodDefinition, next, ...interceptorArguments)
+      interceptor: (call, methodDefinition, next) => interceptor(call, methodDefinition, next, ...interceptorArguments),
     });
     return this;
   }
 
   /**
    * Adds implementation of a new service.
-   * @param {import("grpc").ServiceDefinition} definition Definition of the service.
+   * @param {import("@grpc/grpc-js").ServiceDefinition} definition Definition of the service.
    * @param {import("./index").UntypedServiceImplementation} implementation Implementation of the service.
    */
   addService(definition, implementation) {
@@ -68,25 +68,26 @@ module.exports = class GrpcHostBuilder {
    * @param {ServerCredentials} [credentials = ServerCredentials.createInsecure()] Server credentials
    */
   bind(grpcBind, credentials = ServerCredentials.createInsecure()) {
-    this._server.bind(grpcBind, credentials);
+    this._serverBind = grpcBind;
+    this._serverCredentials = credentials;
     return this;
   }
 
   /**
-   * @param {import("grpc").MethodDefinition} methodDefinition
-   * @returns {"bidi" | "client_stream" | "server_stream" | "unary"}
+   * @param {import("@grpc/grpc-js").MethodDefinition} methodDefinition
+   * @returns {"bidi" | "clientStream" | "serverStream" | "unary"}
    */
   static _getMethodType(methodDefinition) {
-    if (methodDefinition.requestStream) return methodDefinition.responseStream ? "bidi" : "client_stream";
-    return methodDefinition.responseStream ? "server_stream" : "unary";
+    if (methodDefinition.requestStream) return methodDefinition.responseStream ? "bidi" : "clientStream";
+    return methodDefinition.responseStream ? "serverStream" : "unary";
   }
 
   /**
    * @param {number} serviceIndex
    * @param {import("./index").UntypedServiceImplementation} serviceImplementation
    * @param {string} methodName
-   * @param {import("grpc").MethodDefinition} methodDefinition
-   * @returns {import("grpc").handleCall}
+   * @param {import("@grpc/grpc-js").MethodDefinition} methodDefinition
+   * @returns {import("@grpc/grpc-js").handleCall}
    */
   _getMethodImplementation(serviceIndex, serviceImplementation, methodName, methodDefinition) {
     let methodImplementation = serviceImplementation[methodName];
@@ -102,7 +103,7 @@ module.exports = class GrpcHostBuilder {
       if (interceptorDefinition.index > serviceIndex) continue;
 
       const next = serviceCallHandler;
-      serviceCallHandler = async call => interceptorDefinition.interceptor(call, methodDefinition, next);
+      serviceCallHandler = async (call) => interceptorDefinition.interceptor(call, methodDefinition, next);
     }
 
     const methodType = GrpcHostBuilder._getMethodType(methodDefinition);
@@ -131,10 +132,16 @@ module.exports = class GrpcHostBuilder {
   /**
    * Builds the server.
    */
-  build() {
+  async buildAsync() {
     this._addServices();
-
+    await new Promise((resolve, reject) =>
+      this._server.bindAsync(this._serverBind, this._serverCredentials, (error) => {
+        if (error !== undefined && error !== null) reject(error);
+        else resolve();
+      })
+    );
     this._server.start();
+
     return this._server;
   }
 };
