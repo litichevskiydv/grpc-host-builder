@@ -1,5 +1,5 @@
 const grpc = require("@grpc/grpc-js");
-const GrpcError = require("../errors/grpcError");
+const { GrpcError } = require("grpc-error-extra");
 
 /**
  * @param {Error} error
@@ -23,7 +23,10 @@ module.exports = function (methodDefinition, handler, logger) {
       let grpcError = error;
       if (error instanceof GrpcError === false) {
         grpcError = createGrpcError(error);
-        logger.error("Unhandled exception has occurred in method {methodName}", { error, methodName: methodDefinition.path });
+        logger.error("Unhandled exception has occurred in method {methodName}", {
+          error,
+          methodName: methodDefinition.path,
+        });
       }
 
       if (callback) callback(grpcError);

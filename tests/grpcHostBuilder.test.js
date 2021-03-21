@@ -1,15 +1,13 @@
 const path = require("path");
 const grpc = require("grpc");
 const grpcJs = require("@grpc/grpc-js");
+const { GrpcError } = require("grpc-error-extra");
 const protoLoader = require("grpc-pbf-loader").packageDefinition;
 const { from, Observable, Subject } = require("rxjs");
 const { map, reduce } = require("rxjs/operators");
 const { async } = require("rxjs/internal/scheduler/async");
 
-const {
-  GrpcHostBuilder,
-  Errors: { GrpcError },
-} = require("../src/index");
+const { GrpcHostBuilder } = require("../src/index");
 
 const {
   HelloRequest: ServerUnaryRequest,
