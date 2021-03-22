@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
         node-version: ["10", "12", "13", "14", "15"]
     
     runs-on: ${{ matrix.os }}
@@ -25,7 +25,9 @@ jobs:
       - name: install dependencies
         run: npm ci
       - name: build
-        run: npm run build
+        run: |
+          npm build:server:protos
+          npm run build:client
       - name: test
         run: npm t
 
@@ -45,7 +47,9 @@ jobs:
       - name: install dependencies
         run: npm ci
       - name: build
-        run: npm run build
+        run: |
+          npm build:server:protos
+          npm run build:client
       - name: calculate coverage
         run: npm run coverageCalculation
       - name: coveralls
