@@ -1,6 +1,5 @@
 const path = require("path");
-const grpc = require("grpc");
-const grpcJs = require("@grpc/grpc-js");
+const grpc = require("@grpc/grpc-js");
 const { GrpcError } = require("grpc-error-extra");
 const protoLoader = require("grpc-pbf-loader").packageDefinition;
 const { from, Observable, Subject } = require("rxjs");
@@ -25,7 +24,7 @@ const {
   GreeterClient,
 } = require("./generated/client/greeter_client_pb").v1;
 
-grpcJs.setLogVerbosity(grpcJs.logVerbosity.ERROR + 1);
+grpc.setLogVerbosity(grpc.logVerbosity.ERROR + 1);
 expect.extend({
   containsError(received) {
     if (Object.values(received).find((x) => x instanceof Error)) return { pass: true };
@@ -37,7 +36,7 @@ expect.extend({
 });
 
 const grpcBind = "0.0.0.0:3000";
-const packageObject = grpcJs.loadPackageDefinition(
+const packageObject = grpc.loadPackageDefinition(
   protoLoader.loadSync(path.join(__dirname, "./protos/greeter.proto"), {
     includeDirs: [path.join(__dirname, "./include/")],
   })
@@ -104,6 +103,7 @@ const getSpanId = async (callerSpanId) => {
 const prepareErrorMatchingObject = (innerErrorMessage) =>
   expect.objectContaining({
     message: "13 INTERNAL: Unhandled exception has occurred",
+    details: [expect.objectContaining({ detail: innerErrorMessage })],
   });
 
 afterEach(() => {
@@ -267,7 +267,7 @@ test("Must catch and not log GrpcError", async () => {
   server = await createHost((x) =>
     x
       .addInterceptor(() => {
-        throw new GrpcError("Wrong payload", { statusCode: grpcJs.status.INVALID_ARGUMENT });
+        throw new GrpcError("Wrong payload", { statusCode: grpc.status.INVALID_ARGUMENT });
       })
       .useLoggersFactory(mockLoggersFactory)
   );
