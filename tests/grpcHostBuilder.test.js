@@ -85,7 +85,7 @@ const getMessage = async (name) => {
   const request = new ClientUnaryRequest();
   request.setName(name);
 
-  client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
+  if (client === null) client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
   return (await client.sayHello(request)).getMessage();
 };
 
@@ -96,7 +96,7 @@ const getSpanId = async (callerSpanId) => {
   const request = new ClientUnaryRequest();
   request.setName("Tester");
 
-  client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
+  if (client === null) client = new GreeterClient(grpcBind, grpc.credentials.createInsecure());
   return (await client.sayHello(request, metadata)).getSpanId();
 };
 
@@ -107,8 +107,15 @@ const prepareErrorMatchingObject = (innerErrorMessage) =>
   });
 
 afterEach(() => {
-  if (client) client.close();
-  if (server) server.forceShutdown();
+  if (client) {
+    client.close();
+    client = null;
+  }
+
+  if (server) {
+    server.forceShutdown();
+    server = null;
+  }
 });
 
 test("Must perform unary call", async () => {
@@ -233,11 +240,11 @@ test("Must build server with stateful interceptor", async () => {
 
   // When
   const messageForTom = await getMessage("Tom");
-  //const messageForAlex = await getMessage("Alex");
+  const messageForAlex = await getMessage("Alex");
 
   // Then
   expect(messageForTom).toBe("Hello again, Tom!");
-  //expect(messageForAlex).toBe("Hello, Alex!");
+  expect(messageForAlex).toBe("Hello, Alex!");
 });
 
 test("Must catch and log common error", async () => {
