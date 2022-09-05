@@ -9,6 +9,9 @@
 
 Lightweight configurator for gRPC host
 
+## This was migrated to https://github.com/litichevskiydv/grpc-bay
+This repository has been moved to the unified "monorepo". You can find the source under [/packages/grpc-host-builder](https://github.com/litichevskiydv/grpc-bay/tree/master/packages/grpc-host-builder).
+
 # Install
 
 `npm i grpc-host-builder`
